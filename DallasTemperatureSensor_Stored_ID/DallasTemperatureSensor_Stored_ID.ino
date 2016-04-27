@@ -46,13 +46,13 @@
 #define EEPROM_DEVICE_ADDR_END    EEPROM_DEVICE_ADDR_START+MAX_ATTACHED_DS18B20*2
 
 uint8_t DS_First_Child_ID = 7; //First Child-ID to be used by Dallas Bus; set this to be higher than other Child-ID's who need EEPROM storage to avoid conflicts
-unsigned long SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
+uint16_t SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature.
 float lastTemperature[MAX_ATTACHED_DS18B20];
 uint8_t numSensors = 0;
 DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
-char* string_print = " ";
+String charAddr = "Check for faults";
 uint8_t ts_spot[MAX_ATTACHED_DS18B20]; // array for matching bus-id to EEPROM-index
 bool spot_used[MAX_ATTACHED_DS18B20]; // used spot array
 // Initialize temperature message
@@ -83,7 +83,7 @@ void presentation() {
     Serial.print("Hardware presented: ");
     charAddr = addrToChar(tempDeviceAddress);
     Serial.println(charAddr);
-    present(ts_spot[i], S_TEMP, charAddr); //, ((char*) (tempDeviceAddress, 8))); //seem that this is not working as intended
+    present(ts_spot[i], S_TEMP, ((char*) charAddr)); //, ((char*) (tempDeviceAddress, 8))); //seem that this is not working as intended
 #ifdef SEND_ID
     //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
     send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
@@ -237,5 +237,4 @@ String addrToChar(uint8_t* data) {
   }
   return strAddr;
 }
-
 

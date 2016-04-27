@@ -42,15 +42,14 @@ float lastTemperature[MAX_ATTACHED_DS18B20];
 uint8_t numSensors = 0;
 unsigned long SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
 boolean metric = true;
-unsigned long lastTempAll = 0;
 
 // Initialize temperature message
 MyMessage DallasMsg(0, V_TEMP);
 DeviceAddress dallasAddresses[] = {
-  {0x28, 0xFF, 0xF0, 0x5C, 0x54, 0x14, 0x1, 0x48},
-  {0x28, 0xFF, 0x7C, 0x3E, 0x54, 0x14, 0x1, 0x35},
-  {0x28, 0xFF, 0x36, 0x98, 0x54, 0x14, 0x1, 0xC1},
-  {0x28, 0xFF, 0xF5, 0x15, 0x54, 0x14, 0x1, 0xE9}
+  {0x28, 0xFF, 0xF0, 0x5C, 0x54, 0x14, 0x01, 0x48},
+  {0x28, 0xFF, 0x7C, 0x3E, 0x54, 0x14, 0x01, 0x35},
+  {0x28, 0xFF, 0x36, 0x98, 0x54, 0x14, 0x01, 0xC1},
+  {0x28, 0xFF, 0xF5, 0x15, 0x54, 0x14, 0x01, 0xE9}
 };
 
 void setup() {
@@ -72,7 +71,6 @@ void presentation()  {
   }
 }
 
-
 void loop() {
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
@@ -80,28 +78,22 @@ void loop() {
   int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(conversionTime);
-  unsigned long currentMillis = millis();
-  if (currentMillis - lastTempAll > SLEEP_TIME) {
-    // Read temperatures and send them to controller
-    for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
+  // Read temperatures and send them to controller
+  for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
+    // Fetch and round temperature to one decimal
+    float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric ? sensors.getTempC(dallasAddresses[i]) : sensors.getTempF(dallasAddresses[i])) * 10.)) / 10.;
+    //float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric?sensors.getTempCByIndex(i):sensors.getTempFByIndex(i)) * 10.)) / 10.;
 
-      // Fetch and round temperature to one decimal
-      float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric ? sensors.getTempC(dallasAddresses[i]) : sensors.getTempF(dallasAddresses[i])) * 10.)) / 10.;
-      //float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric?sensors.getTempCByIndex(i):sensors.getTempFByIndex(i)) * 10.)) / 10.;
-
-      // Only send data if temperature has changed and no error
+    // Only send data if temperature has changed and no error
 #if COMPARE_TEMP == 1
-      if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
+    if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
 #else
-      if (temperature != -127.00 && temperature != 85.00) {
+    if (temperature != -127.00 && temperature != 85.00) {
 #endif
-
-        // Send in the new temperature
-        send(DallasMsg.setSensor(i + DS_First_Child_ID).set(temperature, 1));
-        // Save new temperatures for next compare
-        lastTemperature[i] = temperature;
-        lastTempAll = currentMillis;
-      }
+      // Send in the new temperature
+      send(DallasMsg.setSensor(i + DS_First_Child_ID).set(temperature, 1));
+      // Save new temperatures for next compare
+      lastTemperature[i] = temperature;
     }
   }
   sleep(SLEEP_TIME);
