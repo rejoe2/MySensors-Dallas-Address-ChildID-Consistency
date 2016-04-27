@@ -52,7 +52,7 @@ DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Tem
 float lastTemperature[MAX_ATTACHED_DS18B20];
 uint8_t numSensors = 0;
 DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
-String charAddr = "Check for faults";
+char* charAddr = "Check for faults";
 uint8_t ts_spot[MAX_ATTACHED_DS18B20]; // array for matching bus-id to EEPROM-index
 bool spot_used[MAX_ATTACHED_DS18B20]; // used spot array
 // Initialize temperature message
@@ -83,7 +83,7 @@ void presentation() {
     Serial.print("Hardware presented: ");
     charAddr = addrToChar(tempDeviceAddress);
     Serial.println(charAddr);
-    present(ts_spot[i], S_TEMP, ((char*) charAddr)); //, ((char*) (tempDeviceAddress, 8))); //seem that this is not working as intended
+    present(ts_spot[i], S_TEMP, (char*) charAddr); //, ((char*) (tempDeviceAddress, 8))); //seem that this is not working as intended
 #ifdef SEND_ID
     //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
     send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
@@ -226,7 +226,7 @@ void storeSensorAddr(DeviceAddress a, uint8_t index) {
 #endif
 }
 
-String addrToChar(uint8_t* data) {
+char* addrToChar(uint8_t* data) {
   String strAddr = String(data[0], HEX); //Chip Version; should be higher than 16
   byte first ;
   int j = 0;
@@ -235,6 +235,9 @@ String addrToChar(uint8_t* data) {
     strAddr = strAddr + String(data[i], HEX);
     strAddr.toUpperCase();
   }
-  return strAddr;
+    for (int j = 0; j < 16; j++) {
+      charAddr[j] = strAddr[j];
+    }
+  return charAddr;
 }
 
