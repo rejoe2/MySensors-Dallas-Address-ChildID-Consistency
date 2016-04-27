@@ -1,5 +1,12 @@
-#include <OneWire.h>
+// Enable debug prints to serial monitor
+#define MY_DEBUG
+// Enable and select radio type attached
+#define MY_RADIO_NRF24
+//#define MY_RADIO_RFM69
+#include <SPI.h>
+#include <MySensor.h>
 #include <DallasTemperature.h>
+#include <OneWire.h>
 
 // Data wire is plugged into port 2 on the Arduino
 #define ONE_WIRE_BUS 3 //Pin where Dallas sensor is connected
@@ -11,10 +18,10 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature dallasTemp(&oneWire);
 
 // arrays to hold device addresses
-DeviceAddress tempAddress[8];
+DeviceAddress tempAddress[7];
+String charAddr = "Not yet known";
 
-void setup(void)
-{
+void setup(void) {
   // start serial port
   Serial.begin(115200);
 
@@ -34,26 +41,43 @@ void setup(void)
     Serial.print(" Address: ");
     printAddress(tempAddress[i]);
     Serial.println();
+    Serial.print("Char Address: ");
+
+    charAddr = addrToChar(tempAddress[i]);
+
+    Serial.print(charAddr);
+    Serial.println();
   }
 }
 
-void printAddress(DeviceAddress deviceAddress)
-{
-  Serial.print("{")
+void printAddress(DeviceAddress deviceAddress) {
   for (uint8_t i = 0; i < 8; i++)
   {
     // zero pad the address if necessary
     //if (deviceAddress[i] < 16) Serial.print("0");
     Serial.print("0x");
     Serial.print(deviceAddress[i], HEX);
-    if (i < 7) Serial.print(", ");
+    if (i < 7) {
+      Serial.print(", ");
     }
   }
-  Serial.println("}")
+}
+
+String addrToChar(uint8_t* data) {
+  String strAddr = String(data[0], HEX); //Chip Version; should be higher than 16
+  byte first ;
+  int j = 0;
+  for (uint8_t i = 1; i < 8; i++) {
+    if (data[i] < 16) strAddr = strAddr + 0;
+    strAddr = strAddr + String(data[i], HEX);
+    strAddr.toUpperCase();
+  }
+  return strAddr;
 }
 
 
-void loop(void)
-{
+
+
+void loop(void) {
 
 }
