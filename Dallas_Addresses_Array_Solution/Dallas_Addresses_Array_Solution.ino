@@ -22,6 +22,11 @@
 
 // Enable debug prints to serial monitor
 #define MY_DEBUG
+
+// Enable to print out an array of the attached DallasSensors to Serial
+// comment this after initial setup and adopt MAX_ATTACHED_DS18B20 accordingly
+#define PRINT_ARRAY
+
 // Enable and select radio type attached
 #define MY_RADIO_NRF24
 //#define MY_RADIO_RFM69
@@ -39,24 +44,35 @@ uint8_t DS_First_Child_ID = 7; //First Child-ID to be used by Dallas Bus; set th
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature.
 float lastTemperature[MAX_ATTACHED_DS18B20];
-uint8_t numSensors = 0;
 unsigned long SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
 boolean metric = true;
 
 // Initialize temperature message
 MyMessage DallasMsg(0, V_TEMP);
+
+
+#ifdef PRINT_ARRAY
+DeviceAddress dallasAddresses[8];
+#else
 DeviceAddress dallasAddresses[] = {
   {0x28, 0xFF, 0xF0, 0x5C, 0x54, 0x14, 0x01, 0x48},
   {0x28, 0xFF, 0x7C, 0x3E, 0x54, 0x14, 0x01, 0x35},
   {0x28, 0xFF, 0x36, 0x98, 0x54, 0x14, 0x01, 0xC1},
-  {0x28, 0xFF, 0xF5, 0x15, 0x54, 0x14, 0x01, 0xE9}
+  {0x28, 0xFF, 0xF5, 0x15, 0x54, 0x14, 0x01, 0xE9},
 };
+#endif
+
 
 void setup() {
   // Startup up the OneWire library
   sensors.begin();
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
+
+#ifdef PRINT_ARRAY
+  printAddressArray();
+#endif
+
 }
 
 void presentation()  {
@@ -64,9 +80,8 @@ void presentation()  {
   sendSketchInfo("Dallas Temp, fix Array", "1.0");
   // Register all sensors to gw (they will be created as child devices)
   // Fetch the number of attached temperature sensors
-  numSensors = sensors.getDeviceCount();
   // Present all sensors to controller
-  for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
+  for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
     present(DS_First_Child_ID + i, S_TEMP);
   }
 }
@@ -79,10 +94,9 @@ void loop() {
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(conversionTime);
   // Read temperatures and send them to controller
-  for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
-    // Fetch and round temperature to one decimal
+  for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
+    // Fetch and round temperature to one decimal; original method uses "sensors.getTempCByIndex(i)"
     float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric ? sensors.getTempC(dallasAddresses[i]) : sensors.getTempF(dallasAddresses[i])) * 10.)) / 10.;
-    //float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric?sensors.getTempCByIndex(i):sensors.getTempFByIndex(i)) * 10.)) / 10.;
 
     // Only send data if temperature has changed and no error
 #if COMPARE_TEMP == 1
@@ -97,5 +111,36 @@ void loop() {
     }
   }
   sleep(SLEEP_TIME);
+}
+
+
+//Helper funktion for setting things up
+void printAddressArray() {
+  // start serial port
+  Serial.begin(115200);
+  // show the addresses we found on the bus
+  Serial.println("Copy the following to the DallasAddresses array,");
+  Serial.print("set MAX_ATTACHED_DS18B20 to ");
+  Serial.println(sensors.getDeviceCount());
+  Serial.println("and comment line #define PRINT_ARRAY for regular operation");
+  for (uint8_t i = 0; i < sensors.getDeviceCount(); i++) {
+    if (!sensors.getAddress(dallasAddresses[i], i))
+    {
+      Serial.print("Unable to find address for Device ");
+      Serial.println(i);
+      Serial.println();
+    }
+    Serial.print("{");
+    for (uint8_t j = 0; j < 8; j++)
+    {
+      Serial.print("0x");
+      // zero pad the address if necessary
+      if (dallasAddresses[i][j] < 16) Serial.print("0");
+      Serial.print(dallasAddresses[i][j], HEX);
+      if (j < 7) Serial.print(", ");
+      else Serial.println("},");
+    }
+  }
+  wait(SLEEP_TIME * 20);
 }
 
