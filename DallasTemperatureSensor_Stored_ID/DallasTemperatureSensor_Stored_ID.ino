@@ -33,17 +33,19 @@
 // Enable and select radio type attached
 #define MY_RADIO_NRF24
 //#define MY_RADIO_RFM69
+
 #include <SPI.h>
 #include <MySensor.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
+
 #define COMPARE_TEMP 1 // Send temperature only if changed?
 #define ERASE_HASH // Clear EEPROM, if no 1w-device is present?
 #define SEND_ID // Send also Dallas-Addresses?
 #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
 #define MAX_ATTACHED_DS18B20 16
-#define EEPROM_DEVICE_ADDR_START  64     // start byte in eeprom for remembering our sensors
-#define EEPROM_DEVICE_ADDR_END    EEPROM_DEVICE_ADDR_START+MAX_ATTACHED_DS18B20*2
+#define EEPROM_DEVICE_ADDR_START 64 // start byte in eeprom for remembering our sensors
+#define EEPROM_DEVICE_ADDR_END EEPROM_DEVICE_ADDR_START+MAX_ATTACHED_DS18B20*2 // end byte in eeprom for remembering our sensors
 
 uint8_t DS_First_Child_ID = 7; //First Child-ID to be used by Dallas Bus; set this to be higher than other Child-ID's who need EEPROM storage to avoid conflicts
 uint16_t SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
@@ -129,7 +131,7 @@ void initialiseIdArray() {
     Serial.println("EEPROM cleared...");
   }
 #endif
-  //initialise spot_used array to default false
+  // initialise spot_used array to default false
   for (uint8_t i = 0; i < MAX_ATTACHED_DS18B20; i++) {
     spot_used[i] = false;
   }
@@ -164,6 +166,7 @@ void initialiseIdArray() {
       storeSensorAddr(tempDeviceAddress, k);
     }
   }
+// print IDs and EEPROM spaces
 #ifdef MY_DEBUG
   for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
     sensors.getAddress(tempDeviceAddress, i);
@@ -240,4 +243,3 @@ char* addrToChar(uint8_t* data) {
     }
   return charAddr;
 }
-
