@@ -40,7 +40,7 @@
 #include <OneWire.h>
 
 #define COMPARE_TEMP 1 // Send temperature only if changed?
-#define ERASE_HASH // Clear EEPROM, if no 1w-device is present?
+#define ERASE_HASH 1 // Clear EEPROM, if no 1w-device is present? 1 = Yes, 0 = No
 #define SEND_ID // Send also Dallas-Addresses?
 #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
 #define MAX_ATTACHED_DS18B20 16
@@ -123,7 +123,7 @@ void loop() {
 //
 void initialiseIdArray() {
   uint8_t knownSensors = 0;
-#ifdef ERASE_HASH
+#if ERASE_HASH == 1
   if (numSensors < 1) {
     for (uint8_t i = EEPROM_DEVICE_ADDR_START; i < EEPROM_DEVICE_ADDR_END + 1; i++) {
       saveState(i, 0xFF); //0xFF seems to be better in line with mysensors standards, was 0x00
