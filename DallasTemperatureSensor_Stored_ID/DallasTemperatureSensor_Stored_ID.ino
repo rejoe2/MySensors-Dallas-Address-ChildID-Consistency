@@ -123,6 +123,7 @@ void loop() {
 //
 void initialiseIdArray() {
   uint8_t knownSensors = 0;
+// Clears EEPROM if ERASE_HASH is set to 1 and if no 1w-device is present
 #if ERASE_HASH == 1
   if (numSensors < 1) {
     for (uint8_t i = EEPROM_DEVICE_ADDR_START; i < EEPROM_DEVICE_ADDR_END + 1; i++) {
