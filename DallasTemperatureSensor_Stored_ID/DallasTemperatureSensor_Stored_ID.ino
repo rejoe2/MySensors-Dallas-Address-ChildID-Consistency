@@ -34,7 +34,7 @@
 #define MY_RADIO_NRF24
 //#define MY_RADIO_RFM69
 #include <SPI.h>
-#include <MySensor.h>
+#include <MySensors.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
 #define COMPARE_TEMP 1 // Send temperature only if changed?
@@ -52,6 +52,8 @@ DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Tem
 float lastTemperature[MAX_ATTACHED_DS18B20];
 uint8_t numSensors = 0;
 DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
+int  resolution = 10;
+int  conversionTime = 0;
 char* charAddr = "Check for faults";
 uint8_t ts_spot[MAX_ATTACHED_DS18B20]; // array for matching bus-id to EEPROM-index
 bool spot_used[MAX_ATTACHED_DS18B20]; // used spot array
@@ -63,15 +65,21 @@ MyMessage msgId(0, V_ID);
 boolean receivedConfig = false;
 boolean metric = true;
 
-// Initialize temperature message
-void setup() {
+void before() {
+  conversionTime = 750 / (1 << (12 - resolution));
   // Startup up the OneWire library
   sensors.begin();
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
   // Fetch the number of attached temperature sensors
   numSensors = sensors.getDeviceCount();
+  // use the 1.1 V internal reference
   initialiseIdArray();
+}
+
+
+// Initialize temperature message
+void setup() {
 }
 
 void presentation() {
@@ -88,13 +96,13 @@ void presentation() {
     //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
     send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
 #endif
-  }
+  sensors.setResolution(tempDeviceAddress, resolution);
+    }
 }
 void loop() {
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
   // query conversion time and sleep until conversion completed
-  int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   wait(conversionTime);
   // Read temperatures and send them to controller
