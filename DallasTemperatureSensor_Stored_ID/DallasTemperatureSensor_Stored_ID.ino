@@ -52,7 +52,7 @@ DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Tem
 float lastTemperature[MAX_ATTACHED_DS18B20];
 uint8_t numSensors = 0;
 DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
-int  resolution = 10;
+int  resolution = 12;
 int  conversionTime = 0;
 char* charAddr = "Check for faults";
 uint8_t ts_spot[MAX_ATTACHED_DS18B20]; // array for matching bus-id to EEPROM-index
@@ -64,6 +64,8 @@ MyMessage msgId(0, V_ID);
 #endif
 boolean receivedConfig = false;
 boolean metric = true;
+boolean IDsSent = false;
+
 
 void before() {
   conversionTime = 750 / (1 << (12 - resolution));
@@ -91,13 +93,9 @@ void presentation() {
     Serial.print("Hardware presented: ");
     charAddr = addrToChar(tempDeviceAddress);
     Serial.println(charAddr);
-    present(ts_spot[i], S_TEMP, (char*) charAddr); //, ((char*) (tempDeviceAddress, 8))); //seem that this is not working as intended
-#ifdef SEND_ID
-    //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
-    send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
-#endif
-  sensors.setResolution(tempDeviceAddress, resolution);
-    }
+    present(ts_spot[i], S_TEMP);
+    sensors.setResolution(tempDeviceAddress, resolution);
+  }
 }
 void loop() {
   // Fetch temperatures from Dallas sensors
@@ -119,6 +117,13 @@ void loop() {
       send(msgTemp.setSensor(ts_spot[i]).set(temperature, 1));
       // Save new temperatures for next compare
       lastTemperature[i] = temperature;
+#ifdef SEND_ID
+      if (!IDsSent) {
+      //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
+      send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
+      IDsSent = true;
+      }
+#endif
     }
   }
   wait(SLEEP_TIME);
@@ -243,9 +248,9 @@ char* addrToChar(uint8_t* data) {
     strAddr = strAddr + String(data[i], HEX);
     strAddr.toUpperCase();
   }
-    for (int j = 0; j < 16; j++) {
-      charAddr[j] = strAddr[j];
-    }
+  for (int j = 0; j < 16; j++) {
+    charAddr[j] = strAddr[j];
+  }
   return charAddr;
 }
 
