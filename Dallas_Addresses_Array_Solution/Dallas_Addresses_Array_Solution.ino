@@ -31,12 +31,11 @@
 #define MY_RADIO_NRF24
 //#define MY_RADIO_RFM69
 #include <SPI.h>
-#include <MySensor.h>
+#include <MySensors.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
 #define COMPARE_TEMP 1 // Send temperature only if changed?
 #define ERASE_HASH // Clear EEPROM, if no 1w-device is present?
-#define SEND_ID // Send also Dallas-Addresses?
 #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
 #define MAX_ATTACHED_DS18B20 16
 
@@ -49,12 +48,13 @@ boolean metric = true;
 
 // Initialize temperature message
 MyMessage DallasMsg(0, V_TEMP);
-
+MyMessage msgId(0, V_ID);
 
 #ifdef PRINT_ARRAY
 DeviceAddress dallasAddresses[8];
 #else
 DeviceAddress dallasAddresses[] = {
+  {0x28, 0xFF, 0x8A, 0x8B, 0x54, 0x14, 0x01, 0x1F},
   {0x28, 0xFF, 0xF0, 0x5C, 0x54, 0x14, 0x01, 0x48},
   {0x28, 0xFF, 0x7C, 0x3E, 0x54, 0x14, 0x01, 0x35},
   {0x28, 0xFF, 0x36, 0x98, 0x54, 0x14, 0x01, 0xC1},
@@ -62,13 +62,17 @@ DeviceAddress dallasAddresses[] = {
 };
 #endif
 
+int  resolution = 10;
+int  conversionTime = 750;
 
-void setup() {
+void before() {
+  conversionTime = 750 / (1 << (12 - resolution));
   // Startup up the OneWire library
   sensors.begin();
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
-
+  // Fetch the number of attached temperature sensors
+  //numSensors = sensors.getDeviceCount();
 #ifdef PRINT_ARRAY
   printAddressArray();
 #endif
@@ -82,15 +86,20 @@ void presentation()  {
   // Fetch the number of attached temperature sensors
   // Present all sensors to controller
   for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
-    present(DS_First_Child_ID + i, S_TEMP);
+    present(DS_First_Child_ID + i, S_TEMP, dallasAddresses[i]);
   }
 }
+
+void setup() {
+  for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
+      send(msgId.setSensor(DS_First_Child_ID + i).set(dallasAddresses[i], 8));
+  }
+}
+
 
 void loop() {
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
-  // query conversion time and sleep until conversion completed
-  int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(conversionTime);
   // Read temperatures and send them to controller
