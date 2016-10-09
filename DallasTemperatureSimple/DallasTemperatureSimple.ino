@@ -16,7 +16,7 @@
    DESCRIPTION
    Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
    http://www.mysensors.org/build/temp
-   Enhanced Version also sending the Dallas-ID
+   Enhanced Version also sending the Dallas-ROM-ID
 */
 
 // Enable debug prints to serial monitor
@@ -24,12 +24,13 @@
 // Enable and select radio type attached
 #define MY_RADIO_NRF24
 //#define MY_RADIO_RFM69
+#define MY_NODE_ID 110
 #include <SPI.h>
 #include <MySensors.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
 #define COMPARE_TEMP 1 // Send temperature only if changed?
-#define SEND_ID // Send also Dallas-Addresses?
+//#define SEND_ID // Send also Dallas-Addresses?
 #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
 #define MAX_ATTACHED_DS18B20 16
 
@@ -42,12 +43,9 @@ uint8_t numSensors = 0;
 DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
 int  resolution = 12;
 int  conversionTime = 0;
-char* charAddr = "Check for faults";
 // Initialize temperature message
 MyMessage msgTemp(0, V_TEMP);
-#ifdef SEND_ID
 MyMessage msgId(0, V_ID);
-#endif
 boolean receivedConfig = false;
 boolean metric = true;
 boolean IDsSent = false;
@@ -63,38 +61,26 @@ void before() {
   numSensors = sensors.getDeviceCount();
 }
 
-
-// Initialize temperature message
-void setup() {
-}
-
 void presentation() {
   // Send the sketch version information to the gateway and Controller
   sendSketchInfo("Temperature Sensor", "1.4");
   // Present all sensors to controller
   for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
-#ifdef MY_DEBUG
+    present(i + 1, S_TEMP, tempDeviceAddress);
+  }
+}
+
+void setup() {
+  for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
     sensors.getAddress(tempDeviceAddress, i);
-    Serial.print("Hardware presented: ");
-    charAddr = addrToChar(tempDeviceAddress);
-    Serial.println(charAddr);
-#endif
-    present(i + 1, S_TEMP);
+    //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
+    send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
     sensors.setResolution(tempDeviceAddress, resolution);
   }
 }
+
 void loop() {
   // Fetch temperatures from Dallas sensors
-#ifdef SEND_ID
-  if (!IDsSent) {
-    for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
-      sensors.getAddress(tempDeviceAddress, i);
-      //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
-      send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
-    }
-    IDsSent = true;
-  }
-#endif
   sensors.requestTemperatures();
   // query conversion time and sleep until conversion completed
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
@@ -116,21 +102,5 @@ void loop() {
     }
   }
   wait(SLEEP_TIME);
-}
-
-
-char* addrToChar(uint8_t* data) {
-  String strAddr = String(data[0], HEX); //Chip Version; should be higher than 16
-  byte first ;
-  int j = 0;
-  for (uint8_t i = 1; i < 8; i++) {
-    if (data[i] < 16) strAddr = strAddr + 0;
-    strAddr = strAddr + String(data[i], HEX);
-    strAddr.toUpperCase();
-  }
-  for (int j = 0; j < 16; j++) {
-    charAddr[j] = strAddr[j];
-  }
-  return charAddr;
 }
 
