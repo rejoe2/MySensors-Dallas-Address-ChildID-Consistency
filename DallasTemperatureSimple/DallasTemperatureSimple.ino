@@ -73,7 +73,7 @@ void setup()
   for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
     sensors.getAddress(tempDeviceAddress, i);
 #ifdef SEND_ID    
-    //8 will assure a length of 16 of the sent ROM-ID 
+    // 8 will assure a length of 16 of the sent ROM-ID 
     send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
 #endif
     sensors.setResolution(tempDeviceAddress, resolution);
@@ -84,7 +84,7 @@ void presentation() {
   // Send the sketch version information to the gateway and Controller
   sendSketchInfo("Temperature Sensor", "1.2");
 
-    // Fetch the number of attached temperature sensors
+  // Fetch the number of attached temperature sensors
   numSensors = sensors.getDeviceCount();
 
   // Present all sensors to controller
