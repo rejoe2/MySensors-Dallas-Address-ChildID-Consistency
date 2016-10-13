@@ -50,8 +50,8 @@ int numSensors=0;
 bool receivedConfig = false;
 bool metric = true;
 DeviceAddress tempDeviceAddress; // We'll use this variable to store a found device address
-int  resolution = 12;
-int  conversionTime = 0;
+int resolution = 12; // precision: 12 bits = 0.0625°C, 11 bits = 0.125°C, 10 bits = 0.25°C, 9 bits = 0.5°C 
+int conversionTime = 0;
 // Initialize temperature message
 MyMessage msgTemp(0,V_TEMP);
 MyMessage msgId(0,V_ID);
@@ -59,6 +59,7 @@ MyMessage msgId(0,V_ID);
 
 void before()
 {
+  // 12 bits = 750 ms, 11 bits = 375ms, 10 bits = 187.5ms, 9 bits = 93.75ms
   conversionTime = 750 / (1 << (12 - resolution));
   // Startup up the OneWire library
   sensors.begin();
