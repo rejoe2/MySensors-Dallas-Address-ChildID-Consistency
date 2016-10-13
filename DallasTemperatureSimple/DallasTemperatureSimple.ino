@@ -55,6 +55,7 @@ int  conversionTime = 0;
 // Initialize temperature message
 MyMessage msgTemp(0,V_TEMP);
 MyMessage msgId(0,V_ID);
+#define SEND_ID
 
 void before()
 {
@@ -70,8 +71,10 @@ void setup()
 
   for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
     sensors.getAddress(tempDeviceAddress, i);
-    //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
+#ifdef SEND_ID    
+    //8 will assure a length of 16 of the sent ROM-ID 
     send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
+#endif
     sensors.setResolution(tempDeviceAddress, resolution);
   }
 }
@@ -94,8 +97,6 @@ void loop()
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
 
-  // query conversion time and sleep until conversion completed
-  int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(conversionTime);
 
@@ -118,5 +119,6 @@ void loop()
       lastTemperature[i]=temperature;
     }
   }
+  // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(SLEEP_TIME);
 }
