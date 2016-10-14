@@ -57,6 +57,10 @@ MyMessage msgTemp(0,V_TEMP);
 MyMessage msgId(0,V_ID);
 #define SEND_ID
 
+#ifdef MYSENSORS_LIBRARY_VERSION == "2.0.0"
+  bool IDsSent=0;
+#endif
+
 void before()
 {
   // 12 bits = 750 ms, 11 bits = 375ms, 10 bits = 187.5ms, 9 bits = 93.75ms
@@ -120,6 +124,18 @@ void loop()
       lastTemperature[i]=temperature;
     }
   }
+  
+#ifdef SEND_ID
+    if (!IDsSent) {
+      for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
+        sensors.getAddress(tempDeviceAddress, i);
+        //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
+        send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
+    }
+    IDsSent = true;
+  }
+#endif
+    
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(SLEEP_TIME);
 }
