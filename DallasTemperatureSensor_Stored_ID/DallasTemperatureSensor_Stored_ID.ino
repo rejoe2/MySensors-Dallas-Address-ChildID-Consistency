@@ -93,7 +93,7 @@ void presentation() {
     Serial.print("Hardware presented: ");
     charAddr = addrToChar(tempDeviceAddress);
     Serial.println(charAddr);
-    present(ts_spot[i], S_TEMP);
+    present(ts_spot[i], S_TEMP, charAddr);
     sensors.setResolution(tempDeviceAddress, resolution);
   }
 }

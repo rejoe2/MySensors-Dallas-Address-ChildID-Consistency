@@ -55,6 +55,8 @@ int conversionTime = 0;
 // Initialize temperature message
 MyMessage msgTemp(0,V_TEMP);
 MyMessage msgId(0,V_ID);
+
+char* charAddr = "Check for faults";
 #define SEND_ID
 
 #ifdef MYSENSORS_LIBRARY_VERSION == "2.0.0"
@@ -93,7 +95,8 @@ void presentation() {
 
   // Present all sensors to controller
   for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {   
-    present(i + 1, S_TEMP, tempDeviceAddress);
+    charAddr = addrToChar(tempDeviceAddress);
+    present(i + 1, S_TEMP, charAddr);
   }
 }
 
@@ -126,6 +129,7 @@ void loop()
   }
   
 #ifdef SEND_ID
+#ifdef MYSENSORS_LIBRARY_VERSION == "2.0.0"
     if (!IDsSent) {
       for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
         sensors.getAddress(tempDeviceAddress, i);
@@ -133,9 +137,26 @@ void loop()
         send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
     }
     IDsSent = true;
+    Serial.println("2.0.0");
   }
+#endif
 #endif
     
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   sleep(SLEEP_TIME);
+}
+
+char* addrToChar(uint8_t* data) {
+  String strAddr = String(data[0], HEX); //Chip Version; should be higher than 16
+  byte first ;
+  int j = 0;
+  for (uint8_t i = 1; i < 8; i++) {
+    if (data[i] < 16) strAddr = strAddr + 0;
+    strAddr = strAddr + String(data[i], HEX);
+    strAddr.toUpperCase();
+  }
+  for (int j = 0; j < 16; j++) {
+    charAddr[j] = strAddr[j];
+  }
+  return charAddr;
 }
