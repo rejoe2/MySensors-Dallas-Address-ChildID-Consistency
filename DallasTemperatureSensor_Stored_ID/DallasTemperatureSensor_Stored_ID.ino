@@ -64,8 +64,6 @@ MyMessage msgId(0, V_ID);
 #endif
 boolean receivedConfig = false;
 boolean metric = true;
-boolean IDsSent = false;
-
 
 void before() {
   conversionTime = 750 / (1 << (12 - resolution));
@@ -77,11 +75,6 @@ void before() {
   numSensors = sensors.getDeviceCount();
   // use the 1.1 V internal reference
   initialiseIdArray();
-}
-
-
-// Initialize temperature message
-void setup() {
 }
 
 void presentation() {
@@ -97,6 +90,18 @@ void presentation() {
     sensors.setResolution(tempDeviceAddress, resolution);
   }
 }
+
+void setup() {
+#ifdef SEND_ID
+  for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
+    sensors.getAddress(tempDeviceAddress, i);
+    //charAddr = addrToChar(tempDeviceAddress);
+    //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
+    send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
+  }
+#endif
+}
+
 void loop() {
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
@@ -117,13 +122,6 @@ void loop() {
       send(msgTemp.setSensor(ts_spot[i]).set(temperature, 1));
       // Save new temperatures for next compare
       lastTemperature[i] = temperature;
-#ifdef SEND_ID
-      if (!IDsSent) {
-      //8 sorgt dafür, dass alle 16 Stellen übermittelt werden
-      send(msgId.setSensor(ts_spot[i]).set(tempDeviceAddress, 8));
-      IDsSent = true;
-      }
-#endif
     }
   }
   wait(SLEEP_TIME);

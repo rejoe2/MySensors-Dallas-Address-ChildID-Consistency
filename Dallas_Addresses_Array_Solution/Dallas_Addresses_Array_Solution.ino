@@ -86,7 +86,7 @@ void presentation()  {
   // Fetch the number of attached temperature sensors
   // Present all sensors to controller
   for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
-    present(DS_First_Child_ID + i, S_TEMP, dallasAddresses[i]);
+    present(DS_First_Child_ID + i, S_TEMP);
   }
 }
 
