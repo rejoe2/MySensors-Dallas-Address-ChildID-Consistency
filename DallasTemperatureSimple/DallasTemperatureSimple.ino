@@ -77,7 +77,7 @@ void presentation() {
   for (int i = 0; i < numSensors && i < MAX_ATTACHED_DS18B20; i++) {
     sensors.getAddress(tempDeviceAddress, i);
     charAddr = addrToChar(tempDeviceAddress);
-    present(i + 1, S_TEMP, charAddr);
+    present(i + DS_First_Child_ID, S_TEMP, charAddr);
 #ifdef MY_DEBUG
     Serial.println(charAddr);
 #endif
@@ -93,7 +93,7 @@ void setup()
     sensors.getAddress(tempDeviceAddress, i);
 #ifdef SEND_ID
     // 8 will assure a length of 16 of the sent ROM-ID
-    send(msgId.setSensor(i + 1).set(tempDeviceAddress, 8));
+    send(msgId.setSensor(i + DS_First_Child_ID).set(tempDeviceAddress, 8));
 #endif
     sensors.setResolution(tempDeviceAddress, resolution);
   }
@@ -122,7 +122,7 @@ void loop()
 #endif
 
       // Send in the new temperature
-      send(msgTemp.setSensor(i + 1).set(temperature, 1));
+      send(msgTemp.setSensor(i + DS_First_Child_ID).set(temperature, 1));
       wait(20);
       // Save new temperatures for next compare
       lastTemperature[i] = temperature;
