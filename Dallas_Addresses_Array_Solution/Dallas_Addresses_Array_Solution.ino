@@ -94,6 +94,7 @@ void setup() {
   for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
       send(msgId.setSensor(DS_First_Child_ID + i).set(dallasAddresses[i], 8));
   }
+  metric = getControllerConfig().isMetric;
 }
 
 
@@ -105,7 +106,7 @@ void loop() {
   // Read temperatures and send them to controller
   for (int i = 0; i < MAX_ATTACHED_DS18B20; i++) {
     // Fetch and round temperature to one decimal; original method uses "sensors.getTempCByIndex(i)"
-    float temperature = static_cast<float>(static_cast<int>((getConfig().isMetric ? sensors.getTempC(dallasAddresses[i]) : sensors.getTempF(dallasAddresses[i])) * 10.)) / 10.;
+    float temperature = static_cast<float>(static_cast<int>((metric ? sensors.getTempC(dallasAddresses[i]) : sensors.getTempF(dallasAddresses[i])) * 10.)) / 10.;
 
     // Only send data if temperature has changed and no error
 #if COMPARE_TEMP == 1
